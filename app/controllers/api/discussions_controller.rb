@@ -10,13 +10,13 @@ class API::DiscussionsController < API::RestfulController
                                 order('motions.closing_at ASC, last_comment_at DESC').
                                 page(params[:page]).per(20)
 
-    respond_with_collection
+    respond_with_discussions
   end
 
   def index
     load_and_authorize_group
     @discussions = visible_records.page(params[:page]).per(25).to_a
-    respond_with_collection
+    respond_with_discussions
   end
 
   def show
@@ -24,6 +24,14 @@ class API::DiscussionsController < API::RestfulController
   end
 
   private
+
+  def respond_with_discussions
+    discussion_wrappers = DiscussionWrapper.new_collection(user: current_user,
+                                                           discussions: @discussions)
+    render json: discussion_wrappers,
+           each_serializer: DiscussionWrapperSerializer,
+           root: 'discussion_wrappers'
+  end
 
   def discussion_params
     params.require(:discussion).permit([:title,

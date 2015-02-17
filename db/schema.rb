@@ -186,8 +186,9 @@ ActiveRecord::Schema.define(version: 20150218210234) do
     t.integer  "discussion_id"
     t.datetime "last_read_at"
     t.integer  "read_comments_count"
-    t.integer  "read_items_count",    default: 0, null: false
+    t.integer  "read_items_count",      default: 0, null: false
     t.boolean  "following"
+    t.integer  "last_read_sequence_id", default: 0, null: false
   end
 
   add_index "discussion_readers", ["discussion_id"], name: "index_motion_read_logs_on_discussion_id", using: :btree
@@ -209,17 +210,19 @@ ActiveRecord::Schema.define(version: 20150218210234) do
     t.string   "title"
     t.datetime "last_comment_at"
     t.text     "description"
-    t.boolean  "uses_markdown",    default: false, null: false
-    t.integer  "total_views",      default: 0,     null: false
-    t.boolean  "is_deleted",       default: false, null: false
-    t.integer  "comments_count",   default: 0,     null: false
-    t.integer  "items_count",      default: 0,     null: false
+    t.boolean  "uses_markdown",     default: false, null: false
+    t.integer  "total_views",       default: 0,     null: false
+    t.boolean  "is_deleted",        default: false, null: false
+    t.integer  "comments_count",    default: 0,     null: false
+    t.integer  "items_count",       default: 0,     null: false
     t.datetime "archived_at"
     t.boolean  "private"
     t.string   "key"
     t.string   "iframe_src"
-    t.datetime "last_activity_at"
-    t.integer  "motions_count",    default: 0
+    t.datetime "last_item_at"
+    t.integer  "motions_count",     default: 0
+    t.integer  "last_sequence_id",  default: 0,     null: false
+    t.integer  "first_sequence_id", default: 0,     null: false
   end
 
   add_index "discussions", ["author_id"], name: "index_discussions_on_author_id", using: :btree

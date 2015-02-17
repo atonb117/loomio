@@ -545,7 +545,7 @@ GEM
       multi_json (~> 1.0)
       rubyzip (~> 1.0)
       websocket (~> 1.0)
-    sequenced (1.6.0)
+    sequenced (2.0.0)
       activerecord (>= 3.0)
       activesupport (>= 3.0)
     sexp_processor (4.4.5)
@@ -703,7 +703,7 @@ DEPENDENCIES
   ruby-progressbar
   sass-rails (>= 3.2)
   selenium-webdriver
-  sequenced (~> 1.6.0)
+  sequenced (~> 2.0.0)
   shoulda-matchers
   simple_form (= 3.1.0.rc2)
   spring

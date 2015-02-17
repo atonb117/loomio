@@ -109,7 +109,8 @@ class Inbox
       unread.
       last_comment_after(3.months.ago).
       includes(:group).
-      order_by_latest_comment.readonly(false).limit(100)
+      order_by_latest_comment_or_created_at.
+      readonly(false).limit(100)
   end
 
   def unvoted_motions_for(group)

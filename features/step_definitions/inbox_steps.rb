@@ -4,9 +4,11 @@ end
 
 Given(/^I belong to a group with a discussion$/) do
   @group = FactoryGirl.create :group
+  @author = FactoryGirl.create :user
   @group.add_member!(@user)
+  @group.add_member!(@author)
   @discussion = FactoryGirl.build :discussion, group: @group
-  DiscussionService.create(discussion: @discussion, actor: @user)
+  DiscussionService.create(discussion: @discussion, actor: @author)
 end
 
 When(/^I click to view the discussion$/) do
@@ -22,6 +24,7 @@ Then(/^the inbox should be empty$/) do
 end
 
 Then(/^I should see the unread discussion$/) do
+  p Queries::VisibleDiscussions.new(user: @user, groups: @group).unread
   page.should have_content(@discussion.title)
 end
 

@@ -1,16 +1,16 @@
 require 'rails_helper'
 
-# External dependencies
-module I18n; end
-module Routing; end
-require 'active_support/core_ext/object/blank'
-require 'active_support/concern'
+## External dependencies
+#module I18n; end
+#module Routing; end
+#require 'active_support/core_ext/object/blank'
+#require 'active_support/concern'
 
-module NotificationItems; end
-require_relative '../../../app/models/concerns/avatar_initials'
-require_relative '../../../app/models/logged_out_user'
-require_relative '../../../extras/notification_item'
-require_relative '../../../extras/notification_items/membership_requested'
+#module NotificationItems; end
+#require_relative '../../../app/models/concerns/avatar_initials'
+#require_relative '../../../app/models/logged_out_user'
+#require_relative '../../../extras/notification_item'
+#require_relative '../../../extras/notification_items/membership_requested'
 
 describe NotificationItems::MembershipRequested do
   let(:notification) { double(:notification, eventable: membership_request) }

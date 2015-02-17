@@ -2,19 +2,7 @@ angular.module('loomioApp').factory 'DiscussionModel', (BaseModel) ->
   class DiscussionModel extends BaseModel
     @singular: 'discussion'
     @plural: 'discussions'
-    @foreignKey: 'discussionId'
-    @indexes: ['groupId']
-
-    initialize: (data) ->
-      @id = data.id
-      @key = data.key
-      @authorId = data.author_id
-      @groupId = data.group_id
-      @title = data.title
-      @description = data.description
-      @createdAt = data.created_at
-      @lastActivityAt = data.last_activity_at
-      @private = data.private
+    @indices: ['groupId', 'authorId']
 
     setupViews: ->
       #@dynamicView('comments')
@@ -35,14 +23,6 @@ angular.module('loomioApp').factory 'DiscussionModel', (BaseModel) ->
     translationOptions: ->
       title:     @title
       groupName: @groupName()
-
-    serialize: ->
-      discussion:
-        group_id: @groupId
-        discussion_id: @discussionId
-        title: @title
-        description: @description
-        private: @private
 
     author: ->
       @recordStore.users.find(@authorId)
@@ -78,3 +58,10 @@ angular.module('loomioApp').factory 'DiscussionModel', (BaseModel) ->
     activeProposalClosedAt: ->
       proposal = @activeProposal()
       proposal.closedAt if proposal?
+
+    reader: ->
+      @recordStore.discussionReaders.find(@id)
+
+    unreadItemsCount: ->
+      @itemsCount - @reader().readItemsCount
+

@@ -2,17 +2,38 @@ angular.module('loomioApp').factory 'BaseModel', ->
   class BaseModel
     @singular: 'undefinedSingular'
     @plural: 'undefinedPlural'
-    errors: {}
-    processing: false
+    @indices: []
+    @attributeNames: []
 
     constructor: (recordsInterface, data) ->
-      Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: true)
-      Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: true)
-      Object.defineProperty(@, 'restfulClient', value: recordsInterface.restfulClient, enumerable: true)
+      @errors = {}
+      @processing = false
+      Object.defineProperty(@, 'recordsInterface', value: recordsInterface, enumerable: false)
+      Object.defineProperty(@, 'recordStore', value: recordsInterface.recordStore, enumerable: false)
+      Object.defineProperty(@, 'restfulClient', value: recordsInterface.restfulClient, enumerable: false)
       @initialize(data)
       @setupViews() if @setupViews? and @id?
 
-    initialize: ->
+    #copy rails snake_case hash, into camelCase object properties
+    initialize: (data) ->
+      @baseInitialize(data)
+
+    baseInitialize: (data) ->
+      _.each _.keys(data), (key) =>
+        attributeName = _.camelCase(key)
+        @[attributeName] = data[key]
+        unless _.contains(@constructor.attributeNames, attributeName)
+          @constructor.attributeNames.push attributeName
+
+    # copy camcelCase attributes to snake_case object for rails
+    serialize: ->
+      @baseSerialize()
+
+    baseSerialize: ->
+      data = {}
+      _.each @attributeNames, (attributeName) ->
+        data[_.snakeCase(attributeName)] = this[attributeName]
+      data
 
     setupViews: ->
 

@@ -10,9 +10,11 @@ class Discussion < ActiveRecord::Base
   scope :archived, -> { where('archived_at is not null') }
   scope :published, -> { where(archived_at: nil, is_deleted: false) }
 
-  scope :active_since, -> (time) { where('last_activity_at > ?', time) }
-  scope :last_comment_after, -> (time) { where('last_comment_at > ?', time) }
-  scope :order_by_latest_comment, -> { order('last_comment_at DESC') }
+  scope :active_since, -> (time) { where('last_item_at > ?', time) }
+  scope :last_comment_after, -> (time) { where('(last_comment_at IS NULL and discussions.created_at > :time) OR last_comment_at > :time', time: time) }
+  scope :order_by_latest_comment_or_created_at, -> { order('CASE
+                                                            WHEN last_comment_at IS NULL THEN discussions.created_at
+                                                            ELSE last_comment_at END DESC') }
 
   scope :visible_to_public, -> { published.where(private: false) }
   scope :not_visible_to_public, -> { where(private: true) }
@@ -64,8 +66,6 @@ class Discussion < ActiveRecord::Base
   delegate :email, to: :author, prefix: :author
   delegate :name_and_email, to: :author, prefix: :author
   delegate :locale, to: :author
-
-  before_create :set_last_comment_at
 
   def published_at
     created_at
@@ -152,22 +152,64 @@ class Discussion < ActiveRecord::Base
     end
   end
 
-  def activity
-    items
-  end
-
   def delayed_destroy
     self.update_attribute(:is_deleted, true)
     self.delay.destroy
   end
 
-  def most_recent_comment
-    comments.order("created_at DESC").first
+
+  def thread_item_created!(item)
+    #update count and last_item_at
+    self.items_count += 1
+    self.last_item_at = item.created_at
+
+    # update first and last sequence ids
+    if self.first_sequence_id == 0
+      self.first_sequence_id = item.sequence_id
+    end
+    self.last_sequence_id = item.sequence_id
+
+    self.save!(validate: false)
   end
 
-  def comment_deleted!
-    refresh_last_comment_at!
-    discussion_readers.each(&:reset_counts!)
+  def thread_item_destroyed!(destroyed_item)
+    self.items_count -= 1
+
+    if destroyed_item.sequence_id == first_sequence_id
+      self.first_sequence_id = sequence_id_or_0(lookup_first_item)
+    end
+
+    if destroyed_item.sequence_id == last_sequence_id
+      last_item = lookup_last_item
+      self.last_sequence_id = sequence_id_or_0(last_item)
+      self.last_item_at = last_item.try(:created_at)
+    end
+
+    self.save!(validate: false)
+
+    discussion_readers.
+      where('last_read_at <= ?', destroyed_item.created_at).
+      each(&:reset_items_count!)
+
+    true
+  end
+
+  def comment_created!(comment)
+    self.comments_count += 1
+    self.last_comment_at = comment.created_at
+
+    self.save!(validate: false)
+  end
+
+  def comment_destroyed!(destroyed_comment)
+    self.comments_count -= 1
+    self.last_comment_at = lookup_last_comment.try(:created_at)
+
+    self.save!(validate: false)
+
+    discussion_readers.
+      where('last_read_at <= ?', destroyed_comment.created_at).
+      each(&:reset_comments_count!)
   end
 
   def public?
@@ -180,15 +222,31 @@ class Discussion < ActiveRecord::Base
     end
   end
 
-  private
+  def last_activity_at
+    last_item_at || created_at
+  end
 
-  def refresh_last_comment_at!
-    if comments.exists?
-      last_comment_time = most_recent_comment.created_at
-    else
-      last_comment_time = created_at
-    end
-    update_attribute(:last_comment_at, last_comment_time)
+  private
+  def lookup_first_item
+    Event.where(discussion_id: id).
+          where('sequence_id is not null').
+          order("sequence_id asc").
+          first
+  end
+
+  def lookup_last_item
+    Event.where(discussion_id: id).
+          where('sequence_id is not null').
+          order('sequence_id desc').
+          first
+  end
+
+  def lookup_last_comment
+    comments.order("created_at asc").last
+  end
+
+  def sequence_id_or_0(item)
+    item.try(:sequence_id) || 0
   end
 
   def private_is_not_nil
@@ -205,10 +263,4 @@ class Discussion < ActiveRecord::Base
       errors.add(:private, "must be public in this group")
     end
   end
-
-  def set_last_comment_at
-    self.last_activity_at ||= Time.now
-    self.last_comment_at ||= Time.now
-  end
-
 end

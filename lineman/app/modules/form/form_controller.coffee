@@ -16,4 +16,4 @@ angular.module('loomioApp').controller 'FormController', ($scope, record, FlashS
 
   $scope.onSuccess = (action) ->
     $scope.$close() if $scope.$close?
-    FlashService.success record.constructor.singular, action, record.translationOptions()
+    FlashService.success record.singular, action, record.translationOptions()

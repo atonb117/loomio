@@ -4,12 +4,15 @@ class DiscussionSerializer < ActiveModel::Serializer
              :key,
              :title,
              :description,
-             :last_activity_at,
+             :last_item_at,
+             :last_comment_at,
              :created_at,
              :updated_at,
              :items_count,
              :comments_count,
-             :private
+             :private,
+             :created_at,
+             :updated_at
 
   has_one :author, serializer: UserSerializer, root: 'users'
   has_one :group, serializer: GroupSerializer, root: 'groups'
