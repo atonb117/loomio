@@ -28,6 +28,7 @@ class Comment < ActiveRecord::Base
   default_scope { includes(:user).includes(:attachments).includes(:discussion) }
 
   #scope :published, -> { where(published: true) }
+  scope :chronologically, -> { order('created_at asc') }
 
   delegate :name, to: :user, prefix: :user
   delegate :name, to: :user, prefix: :author

@@ -11,6 +11,9 @@ class Event < ActiveRecord::Base
   belongs_to :discussion
   belongs_to :user
 
+  scope :sequenced, -> { where('sequence_id is not null').order('sequence_id asc') }
+  scope :chronologically, -> { order('created_at asc') }
+
   after_create :call_thread_item_created
   after_destroy :call_thread_item_destroyed
 

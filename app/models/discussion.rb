@@ -12,9 +12,8 @@ class Discussion < ActiveRecord::Base
 
   scope :active_since, -> (time) { where('last_item_at > ?', time) }
   scope :last_comment_after, -> (time) { where('(last_comment_at IS NULL and discussions.created_at > :time) OR last_comment_at > :time', time: time) }
-  scope :order_by_latest_comment_or_created_at, -> { order('CASE
-                                                            WHEN last_comment_at IS NULL THEN discussions.created_at
-                                                            ELSE last_comment_at END DESC') }
+  scope :order_by_latest_activity, -> { order('CASE WHEN last_comment_at IS NULL THEN discussions.created_at ELSE last_comment_at END DESC') }
+  scope :order_by_closing_soon_then_latest_activity, -> { order('motions.closing_at ASC, CASE WHEN last_comment_at IS NULL THEN discussions.created_at ELSE last_comment_at END DESC') }
 
   scope :visible_to_public, -> { published.where(private: false) }
   scope :not_visible_to_public, -> { where(private: true) }
@@ -176,11 +175,11 @@ class Discussion < ActiveRecord::Base
     self.items_count -= 1
 
     if destroyed_item.sequence_id == first_sequence_id
-      self.first_sequence_id = sequence_id_or_0(lookup_first_item)
+      self.first_sequence_id = sequence_id_or_0(items.sequenced.first)
     end
 
     if destroyed_item.sequence_id == last_sequence_id
-      last_item = lookup_last_item
+      last_item = items.sequenced.last
       self.last_sequence_id = sequence_id_or_0(last_item)
       self.last_item_at = last_item.try(:created_at)
     end
@@ -203,7 +202,7 @@ class Discussion < ActiveRecord::Base
 
   def comment_destroyed!(destroyed_comment)
     self.comments_count -= 1
-    self.last_comment_at = lookup_last_comment.try(:created_at)
+    self.last_comment_at = comments.maximum(:created_at)
 
     self.save!(validate: false)
 
@@ -227,23 +226,6 @@ class Discussion < ActiveRecord::Base
   end
 
   private
-  def lookup_first_item
-    Event.where(discussion_id: id).
-          where('sequence_id is not null').
-          order("sequence_id asc").
-          first
-  end
-
-  def lookup_last_item
-    Event.where(discussion_id: id).
-          where('sequence_id is not null').
-          order('sequence_id desc').
-          first
-  end
-
-  def lookup_last_comment
-    comments.order("created_at asc").last
-  end
 
   def sequence_id_or_0(item)
     item.try(:sequence_id) || 0

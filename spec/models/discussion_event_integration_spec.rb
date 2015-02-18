@@ -59,9 +59,6 @@ describe "Discussions and Discussion Items Working together as one beautiful eco
         create_second_comment
         delete_first_comment
         reload_everything
-        puts "discussion items_count #{discussion.items_count} and items.count #{discussion.items.count}"
-        puts "reader     read_items_count #{discussion_reader.read_items_count}"
-        p discussion.items
         discussion_reader.unread_items_count.should == 1
       end
 

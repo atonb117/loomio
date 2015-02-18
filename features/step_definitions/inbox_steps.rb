@@ -24,7 +24,6 @@ Then(/^the inbox should be empty$/) do
 end
 
 Then(/^I should see the unread discussion$/) do
-  p Queries::VisibleDiscussions.new(user: @user, groups: @group).unread
   page.should have_content(@discussion.title)
 end
 

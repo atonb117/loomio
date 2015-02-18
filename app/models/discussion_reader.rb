@@ -87,19 +87,27 @@ class DiscussionReader < ActiveRecord::Base
   end
 
   def reset_items_count!
-    self.read_items_count = count_read_items(last_read_at)
-    self.last_read_sequence_id = lookup_last_read_item.try(:sequence_id) || 0
+    self.read_items_count = read_items.count
+    self.last_read_sequence_id = if read_items_count == 0
+                                   0
+                                 else
+                                   read_items.last.sequence_id
+                                 end
     self.save!(validate: false)
   end
 
   def reset_comments_count!
-    update_attribute(:read_comments_count, count_read_comments(last_read_at))
+    update_attribute(:read_comments_count, read_comments.count)
   end
 
   def reset_counts!
-    self.read_items_count = count_read_items(last_read_at)
-    self.read_comments_count = count_read_comments(last_read_at)
-    self.last_read_sequence_id = lookup_last_read_item.try(:sequence_id) || 0
+    self.read_items_count = read_items.count
+    self.read_comments_count = read_comments.count
+    self.last_read_sequence_id = if read_items_count == 0
+                                   0
+                                 else
+                                   read_items.last.sequence_id
+                                 end
     self.save!(validate: false)
   end
 
@@ -116,11 +124,12 @@ class DiscussionReader < ActiveRecord::Base
     end
   end
 
-  def lookup_last_read_item
-    discussion.
-      items.
-      where('created_at <= ?', last_read_at).
-      order('created_at desc').first
+  def read_comments
+    discussion.comments.where('created_at <= ?', last_read_at).chronologically
+  end
+
+  def read_items
+    discussion.items.where('created_at <= ?', last_read_at).chronologically
   end
 
   private
