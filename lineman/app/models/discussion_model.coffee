@@ -59,9 +59,21 @@ angular.module('loomioApp').factory 'DiscussionModel', (BaseModel) ->
       proposal = @activeProposal()
       proposal.closedAt if proposal?
 
+    activeProposalLastVoteAt: ->
+      proposal = @activeProposal()
+      proposal.lastVoteAt if proposal?
+
     reader: ->
-      @recordStore.discussionReaders.find(@id)
+      @recordStore.discussionReaders.initialize(id: @id)
 
     unreadItemsCount: ->
       @itemsCount - @reader().readItemsCount
+
+    # time of most recent thing out of last vote, last comment, created at
+    lastActivityAt: ->
+      times = []
+      times.push @activeProposalLastVoteAt()
+      times.push @lastCommentAt
+      times.push @createdAt
+      _.max(_.compact(times))
 

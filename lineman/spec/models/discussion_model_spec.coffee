@@ -60,3 +60,16 @@ describe 'DiscussionModel', ->
   describe 'reader', ->
     it "returns the discussion reader associated with this discussion", ->
       expect(discussion.reader()).toBe(discussionReader)
+
+  describe 'lastActivityAt', ->
+    it 'returns created at when no vote or comments', ->
+      expect(discussion.lastActivityAt()).toBe(discussion.createdAt)
+
+    it 'returns last vote at when proposal last vote at is most recent', ->
+      propoal.lastVoteAt = "2015-02-12T01:17:44.477Z"
+      expect(discussion.lastActivityAt()).toBe(proposal.lastVoteAt)
+
+    it 'returns last comment at when last comment at is most recent', ->
+      discussion.lastCommentAt = "2015-02-12T01:17:44.477Z"
+      expect(discussion.lastActivityAt()).toBe(discussion.lastCommentAt)
+
