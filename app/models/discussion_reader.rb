@@ -4,7 +4,7 @@ class DiscussionReader < ActiveRecord::Base
   belongs_to :discussion
 
   validates_presence_of :discussion, :user
-  validates_uniqueness_of :user_id, :scope => :discussion_id
+  validates_uniqueness_of :user_id, scope: :discussion_id
 
   scope :for_user, -> (user) { where(user_id: user.id) }
 
@@ -81,8 +81,8 @@ class DiscussionReader < ActiveRecord::Base
       age_of_last_read_item = discussion.last_activity_at
     end
 
-    update(read_comments_count: count_read_comments(age_of_last_read_item),
-           read_items_count: count_read_items(age_of_last_read_item),
+    update(read_comments_count: read_comments(age_of_last_read_item).count,
+           read_items_count: read_items(age_of_last_read_item).count,
            last_read_at: age_of_last_read_item)
   end
 
@@ -124,24 +124,16 @@ class DiscussionReader < ActiveRecord::Base
     end
   end
 
-  def read_comments
-    discussion.comments.where('created_at <= ?', last_read_at).chronologically
+  def read_comments(time = nil)
+    discussion.comments.where('comments.created_at <= ?', time || last_read_at).chronologically
   end
 
-  def read_items
-    discussion.items.where('created_at <= ?', last_read_at).chronologically
+  def read_items(time = nil)
+    discussion.items.where('events.created_at <= ?', time || last_read_at).chronologically
   end
 
   private
   def membership
     discussion.group.membership_for(user)
-  end
-
-  def count_read_comments(since)
-    discussion.comments.where('comments.created_at <= ?', since).count
-  end
-
-  def count_read_items(since)
-    discussion.items.where('events.created_at <= ?', since).count
   end
 end
